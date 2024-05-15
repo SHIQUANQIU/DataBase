@@ -1,0 +1,5 @@
+
+restore database ndmc from disk = 'C:\db_restore\ndmc1120905.dmp' with REPLACE; 
+go
+
+

@@ -1,0 +1,39 @@
+$ErrorActionPreference = "STOP"
+# 提醒：範例為求精簡明碼寫死連線字串，實務應用時應加密並另行保存
+$cs = "Data Source=192.168.89.58;Initial Catalog=ndmc;Persist Security Info=True;TrustServerCertificate=true;User ID=ndmcap;Password=Ssky88ndmc"
+$cn = [System.Data.SqlClient.SqlConnection]::new($cs)
+$cn.Open()
+$cmd = $cn.CreateCommand()
+$cmd.CommandText = @"
+select m.object_id,m.definition,o.name,o.type, o.type_desc
+from sys.sql_modules m join sys.objects o
+on m.object_id = o.object_id
+where o.type in ('V','FN','IF','P')
+and o.is_ms_shipped = 0
+"@
+$dr = $cmd.ExecuteReader()
+
+# 看你要放在哪個目錄
+$workPath = "C:\Users\user\Desktop\DB"
+
+while ($dr.Read()) {
+    $type = $dr["type"].ToString().Trim()
+	
+	# 依照類型分資料夾名稱
+    $subFolder = ""
+    if ($type -eq 'P') { $subFolder = "Stored Procedure" }
+    elseif ($type -eq 'FN' -or $type -eq 'IF') { $subFolder = 'Function' }
+	elseif ($type -eq 'V') { $subFolder = "Views" }
+	
+    $name = $dr["name"].ToString()
+    $targetFolder = [System.IO.Path]::Combine($workPath, $subFolder)
+    [System.IO.Directory]::CreateDirectory($targetFolder) | Out-Null
+	
+    $definition = $dr["definition"].ToString()
+	$definition = $definition -replace '\bCREATE\b', 'CREATE or ALTER'
+	$definition | Out-File ([System.IO.Path]::Combine($targetFolder, $name + ".sql")) -Encoding utf8
+    Write-Progress -Activity "匯出資料庫檢視、函式與 SP" -Status $name
+}
+$cn.Dispose()
+
+

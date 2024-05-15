@@ -1,0 +1,20 @@
+# 移動到檔案目錄(但好像不用移動目錄也可以讓下面那段找到檔案)
+Set-Location -Path C:\Users\NDMCDB\Desktop\view、SP、FN
+
+
+
+---------------------要分開執行----------------------
+
+
+# 從指定資料夾中取得所有 SQL 檔案
+$sqlFiles = Get-ChildItem -Path $workPath -Filter *.sql -Recurse
+
+foreach ($sqlFile in $sqlFiles) {
+    $sqlFilePath = $sqlFile.FullName
+    $serverName = "192.168.89.58"  # 更改為目標 SQL Server 的伺服器名稱
+    $databaseName = "ndmc408"  # 更改為目標資料庫的名稱
+    $connectionString = "Server=$serverName;Database=$databaseName;Integrated Security=True;"
+
+    # 使用 sqlcmd 執行 SQL 檔案
+    sqlcmd -S $serverName -d $databaseName -E -i $sqlFilePath
+}
